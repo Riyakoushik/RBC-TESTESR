@@ -1,0 +1,16 @@
+This is a test document for the RBC-TESTER conversion pipeline.
+
+It will be converted to Markdown format.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+Section 1: Introduction
+This is the first section of the document.
+
+Section 2: Features
+- Feature 1: Convert documents to Markdown
+- Feature 2: OCR support for images
+- Feature 3: Text cleaning and optimization
+
+Section 3: Conclusion
+The RBC-TESTER pipeline is ready to convert your files!

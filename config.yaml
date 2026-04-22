@@ -1,0 +1,288 @@
+# RBC-TESTER Document Conversion Pipeline Configuration
+# Unlimited file type support - converts ANY file to Markdown with Second Brain Knowledge System
+
+# Input/Output paths
+paths:
+  input_dir: "input"
+  output_dir: "output"
+  logs_dir: "logs"
+  failed_files_log: "failed_files.txt"
+  summary_file: "summary.json"
+  state_file: ".conversion_state.json"
+  cache_dir: "cache"
+  knowledge_dir: "knowledge"
+
+# Knowledge System Configuration (Second Brain Features)
+knowledge:
+  # Enable/disable knowledge system features
+  enabled: true
+  
+  # Similarity threshold for backlinks (0.0 - 1.0)
+  backlink_threshold: 0.75
+  
+  # Embedding model (all-MiniLM-L6-v2 is recommended for low-memory systems)
+  embedding_model: "all-MiniLM-L6-v2"
+  
+  # Embedding batch size (reduce if low on RAM)
+  embedding_batch_size: 10
+  
+  # Maximum text length for embedding (truncates longer texts)
+  max_embedding_length: 512
+  
+  # Known people names (for better entity detection)
+  known_people: []
+
+# OCR Configuration
+ocr:
+  # Primary OCR engine (EasyOCR works on Python 3.14)
+  primary_engine: "easyocr"
+  # Fallback OCR engine when primary fails
+  fallback_engine: "tesseract"
+  # Language for OCR (supports: en, es, fr, de, it, pt, ru, ja, ko, zh-cn, zh-tw)
+  language: "en"
+  # Use GPU if available (set to false for low VRAM systems)
+  use_gpu: false
+  # Batch size for image processing (reduce if low RAM)
+  batch_size: 4
+  # DPI for PDF to image conversion
+  dpi: 200
+  # Thread count for OCR
+  thread_count: 2
+
+# Text Cleaning Configuration
+cleaning:
+  # Remove duplicate lines within this window
+  duplicate_window: 5
+  # Minimum line length to keep (removes short OCR junk)
+  min_line_length: 3
+  # Remove lines matching these patterns (headers/footers/page numbers)
+  remove_patterns:
+    - "^\\s*\\d+\\s*$"  # standalone page numbers
+    - "^Page \\d+"     # "Page X" headers
+    - "^Copyright"     # copyright lines
+    - "^©"             # copyright symbols
+    - "^All rights"    # rights statements
+    - "^Confidential"  # confidential markers
+    - "^\\s*[-=]{3,}\\s*$"  # horizontal dividers
+  # Remove repeated whitespace
+  normalize_whitespace: true
+  # Fix common OCR errors
+  fix_ocr_errors: true
+
+# Processing Configuration
+processing:
+  # Number of files to process in one batch
+  batch_size: 10
+  # Delay between batches in seconds (for thermal management)
+  batch_delay: 2
+  # Maximum memory usage percentage before pausing
+  max_memory_percent: 80
+  # Maximum CPU usage percentage (0 = no limit)
+  max_cpu_percent: 0
+  # Resume from interruption automatically
+  auto_resume: true
+  # Skip already converted files
+  skip_existing: true
+  # Output format: "md" or "txt"
+  output_format: "md"
+  # Process nested directories recursively
+  recursive: true
+  # Maximum file size in MB (0 = no limit)
+  max_file_size_mb: 0
+  # Minimum file size in KB (skip tiny files)
+  min_file_size_kb: 1
+
+# Logging Configuration
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
+  # Maximum log file size in MB
+  max_size_mb: 10
+  # Number of backup log files to keep
+  backup_count: 3
+  # Log to console
+  console_output: true
+  # Log to file
+  file_output: true
+
+# Table Extraction
+tables:
+  # Convert tables to markdown format
+  convert_to_markdown: true
+  # Minimum rows for a table to be extracted
+  min_rows: 2
+  # Minimum columns for a table to be extracted
+  min_columns: 2
+  # Include table captions
+  include_captions: true
+
+# Supported file extensions (comprehensive list)
+supported_formats:
+  # Document formats
+  documents:
+    - ".pdf"
+    - ".docx"
+    - ".doc"
+    - ".docm"
+    - ".pptx"
+    - ".ppt"
+    - ".pptm"
+    - ".odt"
+    - ".ods"
+    - ".odp"
+    - ".epub"
+    - ".mobi"
+    - ".rtf"
+    - ".tex"
+  
+  # Image formats (OCR will be applied)
+  images:
+    - ".png"
+    - ".jpg"
+    - ".jpeg"
+    - ".jpe"
+    - ".jfif"
+    - ".tiff"
+    - ".tif"
+    - ".bmp"
+    - ".gif"
+    - ".webp"
+    - ".svg"
+    - ".ico"
+    - ".heic"
+    - ".heif"
+    - ".avif"
+    - ".jp2"
+    - ".j2k"
+  
+  # Text and code formats
+  text:
+    - ".txt"
+    - ".md"
+    - ".markdown"
+    - ".html"
+    - ".htm"
+    - ".xhtml"
+    - ".xml"
+    - ".json"
+    - ".yaml"
+    - ".yml"
+    - ".toml"
+    - ".ini"
+    - ".cfg"
+    - ".conf"
+    - ".csv"
+    - ".tsv"
+    - ".log"
+    - ".rst"
+    - ".adoc"
+    - ".tex"
+    - ".bib"
+  
+  # Code files (will be converted to markdown code blocks)
+  code:
+    - ".py"
+    - ".js"
+    - ".ts"
+    - ".java"
+    - ".c"
+    - ".cpp"
+    - ".h"
+    - ".hpp"
+    - ".cs"
+    - ".php"
+    - ".rb"
+    - ".go"
+    - ".rs"
+    - ".swift"
+    - ".kt"
+    - ".scala"
+    - ".r"
+    - ".m"
+    - ".sh"
+    - ".bash"
+    - ".zsh"
+    - ".ps1"
+    - ".sql"
+    - ".pl"
+    - ".lua"
+    - ".dart"
+    - ".jsx"
+    - ".tsx"
+    - ".vue"
+    - ".svelte"
+    - ".css"
+    - ".scss"
+    - ".sass"
+    - ".less"
+    - ".xml"
+    - ".wxml"
+  
+  # Data formats
+  data:
+    - ".json"
+    - ".jsonl"
+    - ".yaml"
+    - ".yml"
+    - ".toml"
+    - ".ini"
+    - ".csv"
+    - ".tsv"
+    - ".parquet"
+    - ".feather"
+    - ".pickle"
+    - ".pkl"
+  
+  # Archive formats (will extract and process contents)
+  archives:
+    - ".zip"
+    - ".tar"
+    - ".tar.gz"
+    - ".tgz"
+    - ".rar"
+    - ".7z"
+  
+  # E-book formats
+  ebooks:
+    - ".epub"
+    - ".mobi"
+    - ".azw"
+    - ".azw3"
+    - ".fb2"
+  
+  # Spreadsheet formats
+  spreadsheets:
+    - ".xlsx"
+    - ".xls"
+    - ".xlsm"
+    - ".ods"
+    - ".csv"
+    - ".tsv"
+  
+  # Presentation formats
+  presentations:
+    - ".pptx"
+    - ".ppt"
+    - ".pptm"
+    - ".odp"
+    - ".key"
+  
+  # Audio formats (transcription - optional, requires whisper)
+  audio:
+    - ".mp3"
+    - ".wav"
+    - ".flac"
+    - ".aac"
+    - ".ogg"
+    - ".m4a"
+    - ".wma"
+  
+  # Video formats (frame extraction - optional)
+  video:
+    - ".mp4"
+    - ".avi"
+    - ".mov"
+    - ".mkv"
+    - ".webm"
+    - ".flv"
+    - ".wmv"

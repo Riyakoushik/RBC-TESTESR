@@ -1,0 +1,102 @@
+# RBC-TESTER Document Conversion Pipeline
+# Comprehensive dependencies for unlimited file type support
+# Works on Python 3.14+
+
+# CLI and UI
+typer>=0.12.0
+rich>=13.7.0
+tqdm>=4.66.0
+loguru>=0.7.0
+
+# System monitoring
+psutil>=5.9.0
+
+# Document processing - Unstructured.io (supports ALL formats)
+unstructured[all-docs]>=0.15.0
+unstructured-inference>=0.7.0
+unstructured-client>=0.43.0
+
+# OCR processing
+# EasyOCR (primary - works on Python 3.14, GPU support)
+easyocr>=1.7.0
+# Tesseract (fallback)
+pytesseract>=0.3.10
+pdf2image>=1.17.0
+# PaddleOCR (optional - requires Python 3.11-3.12)
+# paddleocr>=2.7.0
+# paddlepaddle>=2.6.0
+
+# Image processing
+pillow>=10.3.0
+opencv-python>=4.9.0
+opencv-python-headless>=4.9.0
+
+# PDF processing
+pymupdf>=1.24.0
+pdfplumber>=0.11.0
+pypdf>=6.0.0
+pikepdf>=10.0.0
+
+# Office documents
+python-docx>=1.1.0
+python-pptx>=0.6.23
+openpyxl>=3.1.0
+xlrd>=2.0.0
+
+# EPUB and ebooks
+ebooklib>=0.18
+
+# HTML and web
+beautifulsoup4>=4.12.0
+html2text>=2024.0
+lxml>=5.0.0
+
+# Text processing
+markdown>=3.6.0
+pandocfilters>=1.5.0
+
+# Audio/Video (optional - for transcription)
+# whisper-openai (uncomment if needed)
+# pydub (uncomment if needed)
+
+# Archives and compression
+# rarfile (uncomment if needed)
+# py7zr (uncomment if needed)
+
+# Utilities
+pyyaml>=6.0.1
+pydantic>=2.7.0
+numpy>=1.26.0
+pandas>=2.2.0
+scipy>=1.14.0
+scikit-learn>=1.5.0
+nltk>=3.9.0
+tabulate>=0.9.0
+
+# Knowledge System - Second Brain Features
+# Embeddings and similarity search (CPU mode for low VRAM)
+sentence-transformers>=2.7.0
+faiss-cpu>=1.8.0
+
+# Graph and network analysis
+networkx>=3.3.0
+
+# Date/time parsing
+python-dateutil>=2.9.0
+
+# Fuzzy matching for people/entity detection
+rapidfuzz>=3.14.0
+
+# Built-in (no install needed)
+# sqlite3 (Python stdlib)
+# hashlib (Python stdlib)
+
+# Windows-specific
+pywin32; platform_system=="Windows"
+win32-setctime; platform_system=="Windows"
+
+# macOS-specific (uncomment if needed)
+# pyobjc-framework-Cocoa; platform_system=="Darwin"
+
+# Linux-specific (uncomment if needed)
+# python-magic-bin; platform_system=="Linux"
