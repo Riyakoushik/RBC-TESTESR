@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBC-TESTER Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>RBC-TESTER Dashboard</h1>
+        <p class="subtitle">Riya Built-in Commands and Memories</p>
+    </header>
+
+    <main>
+        <!-- System Stats Bar -->
+        <section id="system-bar" class="system-bar">
+            <div class="sys-stat">
+                <span class="sys-label">CPU</span>
+                <div class="mini-bar"><div id="cpu-bar" class="mini-fill"></div></div>
+                <span id="cpu-val" class="sys-val">--%</span>
+            </div>
+            <div class="sys-stat">
+                <span class="sys-label">Memory</span>
+                <div class="mini-bar"><div id="mem-bar" class="mini-fill"></div></div>
+                <span id="mem-val" class="sys-val">--%</span>
+            </div>
+            <div class="sys-stat">
+                <span class="sys-label">Disk</span>
+                <div class="mini-bar"><div id="disk-bar" class="mini-fill"></div></div>
+                <span id="disk-val" class="sys-val">--%</span>
+            </div>
+        </section>
+
+        <!-- Stats Cards -->
+        <section id="stats" class="cards">
+            <div class="card">
+                <div class="card-value" id="stat-input">--</div>
+                <div class="card-label">Input Files</div>
+            </div>
+            <div class="card">
+                <div class="card-value" id="stat-output">--</div>
+                <div class="card-label">Output Files</div>
+            </div>
+            <div class="card">
+                <div class="card-value" id="stat-completed">--</div>
+                <div class="card-label">Completed</div>
+            </div>
+            <div class="card">
+                <div class="card-value" id="stat-failed">--</div>
+                <div class="card-label">Failed</div>
+            </div>
+            <div class="card">
+                <div class="card-value" id="stat-pending">--</div>
+                <div class="card-label">Pending</div>
+            </div>
+            <div class="card">
+                <div class="card-value" id="stat-size">--</div>
+                <div class="card-label">Output Size (MB)</div>
+            </div>
+        </section>
+
+        <!-- Knowledge Stats -->
+        <section id="knowledge-stats" class="cards">
+            <div class="card card-knowledge">
+                <div class="card-value" id="stat-embeddings">--</div>
+                <div class="card-label">Embeddings</div>
+            </div>
+            <div class="card card-knowledge">
+                <div class="card-value" id="stat-backlinks">--</div>
+                <div class="card-label">Backlinks</div>
+            </div>
+            <div class="card card-knowledge">
+                <div class="card-value" id="stat-tags">--</div>
+                <div class="card-label">Tags</div>
+            </div>
+            <div class="card card-knowledge">
+                <div class="card-value" id="stat-people">--</div>
+                <div class="card-label">People</div>
+            </div>
+            <div class="card card-knowledge">
+                <div class="card-value" id="stat-dates">--</div>
+                <div class="card-label">Dates</div>
+            </div>
+        </section>
+
+        <!-- File Type Breakdown -->
+        <section class="panel">
+            <h2>File Type Breakdown</h2>
+            <div id="file-types" class="type-grid"></div>
+        </section>
+
+        <!-- Progress + Controls -->
+        <section class="panel">
+            <h2>Conversion</h2>
+            <div class="controls">
+                <button id="btn-start" onclick="startConversion()">Start</button>
+                <button id="btn-stop" onclick="stopConversion()" disabled>Stop</button>
+                <button id="btn-retry" onclick="retryFailed()">Retry Failed</button>
+                <button id="btn-reset" onclick="resetState()">Reset State</button>
+            </div>
+            <div id="progress-section" class="progress-section" style="display:none;">
+                <div class="progress-info">
+                    <span id="progress-text">0 / 0</span>
+                    <span id="progress-percent">0%</span>
+                    <span id="progress-eta"></span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-current" class="progress-current"></div>
+            </div>
+        </section>
+
+        <!-- Tabs: Logs / Timeline / Graph / Files -->
+        <section class="panel">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('logs')">Logs</button>
+                <button class="tab" onclick="switchTab('timeline')">Timeline</button>
+                <button class="tab" onclick="switchTab('graph')">Knowledge Graph</button>
+                <button class="tab" onclick="switchTab('files')">Files</button>
+            </div>
+
+            <div id="tab-logs" class="tab-content active">
+                <div class="log-controls">
+                    <select id="log-level" onchange="loadLogs()">
+                        <option value="">All Levels</option>
+                        <option value="INFO">INFO</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="ERROR">ERROR</option>
+                    </select>
+                </div>
+                <div id="logs" class="log-container"></div>
+            </div>
+
+            <div id="tab-timeline" class="tab-content">
+                <div id="timeline" class="timeline-container">
+                    <p class="placeholder">Loading timeline...</p>
+                </div>
+            </div>
+
+            <div id="tab-graph" class="tab-content">
+                <div id="graph-stats" class="graph-stats"></div>
+                <div id="graph-container" class="graph-container">
+                    <canvas id="graph-canvas"></canvas>
+                </div>
+            </div>
+
+            <div id="tab-files" class="tab-content">
+                <div class="file-filters">
+                    <select id="file-status-filter" onchange="loadFiles()">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                    <select id="file-type-filter" onchange="loadFiles()">
+                        <option value="">All Types</option>
+                    </select>
+                </div>
+                <div id="files-table-container">
+                    <table id="files-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Size</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="files-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>RBC-TESTER v1.0.0 &mdash; Document Conversion Pipeline</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

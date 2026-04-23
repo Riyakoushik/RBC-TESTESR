@@ -76,25 +76,15 @@ class BacklinkEngine:
             backlinks = []
             for similar_file_id, similarity in similar_files:
                 if similarity >= self.similarity_threshold:
-                    # Get file info from cache
-                    import sqlite3
-                    conn = sqlite3.connect(self.cache.db_path)
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        "SELECT file_path, title FROM files WHERE id = ?",
-                        (similar_file_id,)
-                    )
-                    result = cursor.fetchone()
-                    conn.close()
-                    
-                    if result:
+                    file_info = self.cache.get_file_info_by_id(similar_file_id)
+
+                    if file_info:
                         backlinks.append({
-                            'file_path': result[0],
-                            'title': result[1] or Path(result[0]).stem,
+                            'file_path': file_info['file_path'],
+                            'title': file_info['title'] or Path(file_info['file_path']).stem,
                             'similarity': similarity
                         })
-                        
-                        # Store backlink in cache
+
                         self.cache.store_backlink(file_id, similar_file_id, similarity)
             
             logger.info(f"Generated {len(backlinks)} backlinks for {file_path}")
@@ -135,53 +125,36 @@ class BacklinkEngine:
             logger.error(f"Failed to regenerate backlinks: {e}")
     
     def _clear_all_backlinks(self):
-        """Clear all backlinks from cache."""
-        try:
-            conn = self.cache._get_connection()
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM backlinks")
-            conn.commit()
-            conn.close()
-            logger.info("Cleared all backlinks")
-        except Exception as e:
-            logger.error(f"Failed to clear backlinks: {e}")
+        """Clear all backlinks from cache via CacheManager."""
+        self.cache.clear_all_backlinks()
+        logger.info("Cleared all backlinks")
     
     def _save_backlinks(self):
         """Save backlinks to JSON file for easy access."""
         try:
-            # Get all backlinks from cache
-            conn = self.cache._get_connection()
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT f1.file_path as source, f2.file_path as target, f2.title, b.similarity
-                FROM backlinks b
-                JOIN files f1 ON b.source_file_id = f1.id
-                JOIN files f2 ON b.target_file_id = f2.id
-                WHERE b.similarity >= ?
-                ORDER BY b.similarity DESC
-            """, (self.similarity_threshold,))
-            
-            results = cursor.fetchall()
-            conn.close()
-            
+            all_backlinks = self.cache.get_all_backlinks(min_similarity=self.similarity_threshold)
+
             # Organize by source file
-            backlinks_dict = {}
-            for source, target, title, similarity in results:
-                if source not in backlinks_dict:
-                    backlinks_dict[source] = []
-                backlinks_dict[source].append({
-                    'file_path': target,
-                    'title': title or Path(target).stem,
-                    'similarity': similarity
-                })
-            
-            # Save to JSON
+            backlinks_dict: Dict[str, List[Dict[str, Any]]] = {}
+            for bl in all_backlinks:
+                source_info = self.cache.get_file_info_by_id(bl['source_file_id'])
+                target_info = self.cache.get_file_info_by_id(bl['target_file_id'])
+
+                if source_info and target_info:
+                    source_path = source_info['file_path']
+                    if source_path not in backlinks_dict:
+                        backlinks_dict[source_path] = []
+                    backlinks_dict[source_path].append({
+                        'file_path': target_info['file_path'],
+                        'title': target_info['title'] or Path(target_info['file_path']).stem,
+                        'similarity': bl['similarity']
+                    })
+
             with open(self.backlinks_path, 'w', encoding='utf-8') as f:
                 json.dump(backlinks_dict, f, indent=2, ensure_ascii=False)
-            
+
             logger.info(f"Saved backlinks to {self.backlinks_path}")
-            
+
         except Exception as e:
             logger.error(f"Failed to save backlinks: {e}")
     
@@ -221,45 +194,25 @@ class BacklinkEngine:
         return "\n".join(lines)
     
     def get_backlink_network_stats(self) -> Dict[str, Any]:
-        """
-        Get statistics about the backlink network.
-        
-        Returns:
-            Dictionary with network statistics
-        """
+        """Get statistics about the backlink network."""
         try:
-            conn = self.cache._get_connection()
-            cursor = conn.cursor()
-            
-            # Count total backlinks
-            cursor.execute("SELECT COUNT(*) FROM backlinks WHERE similarity >= ?", (self.similarity_threshold,))
-            total_backlinks = cursor.fetchone()[0]
-            
-            # Count files with backlinks
-            cursor.execute("""
-                SELECT COUNT(DISTINCT source_file_id)
-                FROM backlinks
-                WHERE similarity >= ?
-            """, (self.similarity_threshold,))
-            files_with_backlinks = cursor.fetchone()[0]
-            
-            # Get average similarity
-            cursor.execute("""
-                SELECT AVG(similarity)
-                FROM backlinks
-                WHERE similarity >= ?
-            """, (self.similarity_threshold,))
-            avg_similarity = cursor.fetchone()[0] or 0
-            
-            conn.close()
-            
+            all_backlinks = self.cache.get_all_backlinks(min_similarity=self.similarity_threshold)
+
+            total_backlinks = len(all_backlinks)
+            source_ids = set(bl['source_file_id'] for bl in all_backlinks)
+            files_with_backlinks = len(source_ids)
+            avg_similarity = (
+                sum(bl['similarity'] for bl in all_backlinks) / total_backlinks
+                if total_backlinks > 0 else 0
+            )
+
             return {
                 'total_backlinks': total_backlinks,
                 'files_with_backlinks': files_with_backlinks,
                 'average_similarity': round(avg_similarity, 3),
                 'similarity_threshold': self.similarity_threshold
             }
-            
+
         except Exception as e:
             logger.error(f"Failed to get backlink stats: {e}")
             return {}

@@ -4,8 +4,9 @@ Removes duplicates, headers, footers, page numbers, and normalizes text.
 """
 
 import re
+from collections import OrderedDict
 from typing import List, Dict, Optional, Set
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from loguru import logger
 
 from .config import get_config
@@ -105,51 +106,48 @@ class TextCleaner:
         """
         Remove duplicate lines within a sliding window.
         Handles repeated headers/footers across pages.
+        Uses OrderedDict to correctly track insertion order.
         """
         lines = text.split('\n')
         window_size = self.config.cleaning.duplicate_window
         cleaned = []
-        
-        # Track seen lines in window
-        window: Set[str] = set()
-        
+
+        # OrderedDict maintains insertion order for correct eviction
+        window: OrderedDict[str, None] = OrderedDict()
+
         for line in lines:
             normalized = self._normalize_for_comparison(line)
-            
+
             if normalized and normalized in window:
-                # Duplicate found, skip it
+                # Duplicate found within window, skip it
                 continue
-            
+
             cleaned.append(line)
-            
+
             # Add to window
             if normalized:
-                window.add(normalized)
-                
-                # Maintain window size
-                if len(window) > window_size:
-                    # Remove oldest (approximation using list)
-                    window_list = list(window)
-                    window = set(window_list[-window_size:])
-        
+                window[normalized] = None
+
+                # Evict oldest entries to maintain window size
+                while len(window) > window_size:
+                    window.popitem(last=False)
+
         return '\n'.join(cleaned)
     
     def _normalize_for_comparison(self, line: str) -> str:
         """
         Normalize line for duplicate comparison.
-        Ignores case, whitespace variations, and minor OCR differences.
+        Ignores case and whitespace variations.
         """
         # Lowercase and strip
         normalized = line.strip().lower()
-        
+
         # Collapse whitespace
         normalized = ' '.join(normalized.split())
-        
-        # Remove common OCR artifacts for comparison
-        normalized = re.sub(r'[^\w\s]', '', normalized)  # Remove punctuation
-        normalized = normalized.replace('0', 'o')  # Common confusion
-        normalized = normalized.replace('1', 'l')  # Common confusion
-        
+
+        # Remove punctuation for looser comparison
+        normalized = re.sub(r'[^\w\s]', '', normalized)
+
         return normalized
     
     def _normalize_whitespace(self, text: str) -> str:
@@ -172,21 +170,26 @@ class TextCleaner:
         return '\n'.join(normalized)
     
     def _fix_common_ocr_errors(self, text: str) -> str:
-        """Fix common OCR recognition errors."""
+        """Fix common OCR recognition errors.
+
+        Only applies safe, word-boundary-aware fixes to avoid corrupting
+        valid text like 'return', 'learn', 'class', etc.
+        """
         if not self.config.cleaning.fix_ocr_errors:
             return text
-        
+
+        # Safe fixes that use word boundaries or context to avoid false positives
         fixes = [
-            (r'([a-zA-Z])\d([a-zA-Z])', r'\1l\2'),  # 1->l in words
-            (r'0([a-zA-Z]{2,})', r'o\1'),  # 0->o at word start
-            (r'([a-zA-Z]{2,})0', r'\1o'),  # 0->o at word end
-            (r'rn', 'm'),  # rn->m (common confusion)
-            (r'cl', 'd'),  # cl->d (common confusion)
+            # Fix isolated digit substitutions inside words (e.g. "he1lo" -> "hello")
+            (r'(?<=[a-zA-Z])1(?=[a-zA-Z]{2,})', 'l'),
+            (r'(?<=[a-zA-Z]{2,})0(?=[a-zA-Z])', 'o'),
+            # Fix common ligature issues
+            (r'\bfl\b', 'fl'),  # fi/fl ligatures
         ]
-        
+
         for pattern, replacement in fixes:
             text = re.sub(pattern, replacement, text)
-        
+
         return text
     
     def _remove_empty_lines(self, text: str) -> str:
