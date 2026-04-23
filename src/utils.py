@@ -32,6 +32,10 @@ def detect_file_type(file_path: str) -> str:
     ext = Path(file_path).suffix.lower()
     
     # Check extension first (faster and works without libmagic)
+    if ext in config.supported_formats.email:
+        return "email"
+    if ext in config.supported_formats.latex:
+        return "latex"
     if ext in config.supported_formats.documents:
         return "document"
     if ext in config.supported_formats.images:
@@ -91,32 +95,27 @@ def is_scanned_pdf(file_path: str) -> bool:
     """
     try:
         import fitz  # PyMuPDF
-        
-        doc = fitz.open(file_path)
-        text_pages = 0
-        image_pages = 0
-        
-        for page_num in range(min(doc.page_count, 5)):  # Check first 5 pages
-            page = doc[page_num]
-            
-            # Check for text
-            text = page.get_text().strip()
-            if len(text) > 50:  # Page has substantial text
-                text_pages += 1
-            
-            # Check for images
-            images = page.get_images()
-            if len(images) > 0:
-                image_pages += 1
-        
-        doc.close()
-        
-        # If more image-heavy pages than text pages, likely scanned
-        return image_pages > text_pages or text_pages == 0
-        
+
+        with fitz.open(file_path) as doc:
+            text_pages = 0
+            image_pages = 0
+
+            for page_num in range(min(doc.page_count, 5)):
+                page = doc[page_num]
+
+                text = page.get_text().strip()
+                if len(text) > 50:
+                    text_pages += 1
+
+                images = page.get_images()
+                if len(images) > 0:
+                    image_pages += 1
+
+            return image_pages > text_pages or text_pages == 0
+
     except Exception as e:
         logger.warning(f"Could not analyze PDF {file_path}: {e}")
-        return True  # Assume scanned if we can't tell
+        return True
 
 
 def get_file_hash(file_path: str) -> str:

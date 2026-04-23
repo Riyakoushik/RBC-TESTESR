@@ -286,3 +286,21 @@ supported_formats:
     - ".webm"
     - ".flv"
     - ".wmv"
+  
+  # Email formats (MBOX, EML)
+  email:
+    - ".mbox"
+    - ".eml"
+    - ".msg"
+  
+  # LaTeX formats
+  latex:
+    - ".tex"
+    - ".latex"
+    - ".bib"
+    - ".sty"
+    - ".cls"
+  
+  # Google Takeout (JSON-based exports)
+  google_takeout:
+    - ".json"

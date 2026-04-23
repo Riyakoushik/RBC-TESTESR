@@ -59,6 +59,9 @@ class ProcessingConfig(BaseModel):
     auto_resume: bool = True
     skip_existing: bool = True
     output_format: str = "md"
+    recursive: bool = True
+    max_file_size_mb: int = 0
+    min_file_size_kb: int = 1
 
 
 class LoggingConfig(BaseModel):
@@ -123,6 +126,15 @@ class SupportedFormats(BaseModel):
     video: List[str] = Field(default_factory=lambda: [
         ".mp4", ".avi", ".mov", ".mkv", ".webm", ".flv", ".wmv"
     ])
+    email: List[str] = Field(default_factory=lambda: [
+        ".mbox", ".eml", ".msg"
+    ])
+    latex: List[str] = Field(default_factory=lambda: [
+        ".tex", ".latex", ".bib", ".sty", ".cls"
+    ])
+    google_takeout: List[str] = Field(default_factory=lambda: [
+        ".json"
+    ])
 
 
 class KnowledgeConfig(BaseModel):
@@ -160,6 +172,8 @@ class Config(BaseModel):
         exts.update(self.supported_formats.presentations)
         exts.update(self.supported_formats.audio)
         exts.update(self.supported_formats.video)
+        exts.update(self.supported_formats.email)
+        exts.update(self.supported_formats.latex)
         return exts
 
 

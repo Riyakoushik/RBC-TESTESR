@@ -576,6 +576,152 @@ class CacheManager:
             logger.error(f"Failed to get file backlinks: {e}")
             return []
     
+    def get_file_info_by_id(self, file_id: int) -> Optional[Dict[str, Any]]:
+        """Get file info by its database ID."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, file_path, title, created_at FROM files WHERE id = ?",
+                (file_id,)
+            )
+            result = cursor.fetchone()
+            conn.close()
+
+            if result:
+                return {
+                    'id': result[0],
+                    'file_path': result[1],
+                    'title': result[2],
+                    'created_at': result[3]
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get file info by id {file_id}: {e}")
+            return None
+
+    def get_all_files(self) -> List[Dict[str, Any]]:
+        """Get all registered files."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, file_path, title, created_at FROM files")
+            results = cursor.fetchall()
+            conn.close()
+            return [
+                {'id': r[0], 'file_path': r[1], 'title': r[2], 'created_at': r[3]}
+                for r in results
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get all files: {e}")
+            return []
+
+    def get_all_backlinks(self, min_similarity: float = 0.5) -> List[Dict[str, Any]]:
+        """Get all backlinks above a minimum similarity."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT source_file_id, target_file_id, similarity FROM backlinks WHERE similarity >= ?",
+                (min_similarity,)
+            )
+            results = cursor.fetchall()
+            conn.close()
+            return [
+                {'source_file_id': r[0], 'target_file_id': r[1], 'similarity': r[2]}
+                for r in results
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get all backlinks: {e}")
+            return []
+
+    def get_all_tags_with_files(self) -> Dict[str, List[int]]:
+        """Get all tags mapped to their file IDs."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT t.tag, t.file_id FROM tags t JOIN files f ON t.file_id = f.id")
+            results = cursor.fetchall()
+            conn.close()
+
+            tag_files: Dict[str, List[int]] = {}
+            for tag, file_id in results:
+                if tag not in tag_files:
+                    tag_files[tag] = []
+                tag_files[tag].append(file_id)
+            return tag_files
+        except Exception as e:
+            logger.error(f"Failed to get tags with files: {e}")
+            return {}
+
+    def get_all_people_with_files(self) -> Dict[str, List[int]]:
+        """Get all people mapped to their file IDs."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT p.person_name, p.file_id FROM people p JOIN files f ON p.file_id = f.id")
+            results = cursor.fetchall()
+            conn.close()
+
+            people_files: Dict[str, List[int]] = {}
+            for name, file_id in results:
+                if name not in people_files:
+                    people_files[name] = []
+                people_files[name].append(file_id)
+            return people_files
+        except Exception as e:
+            logger.error(f"Failed to get people with files: {e}")
+            return {}
+
+    def clear_all_backlinks(self):
+        """Clear all backlinks from the database."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM backlinks")
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.error(f"Failed to clear all backlinks: {e}")
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get overall cache statistics for the web UI."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT COUNT(*) FROM files")
+            total_files = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM embeddings")
+            total_embeddings = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM backlinks")
+            total_backlinks = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(DISTINCT tag) FROM tags")
+            total_tags = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(DISTINCT person_name) FROM people")
+            total_people = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(DISTINCT date_normalized) FROM dates")
+            total_dates = cursor.fetchone()[0]
+
+            conn.close()
+
+            return {
+                'total_files': total_files,
+                'total_embeddings': total_embeddings,
+                'total_backlinks': total_backlinks,
+                'total_tags': total_tags,
+                'total_people': total_people,
+                'total_dates': total_dates,
+            }
+        except Exception as e:
+            logger.error(f"Failed to get stats: {e}")
+            return {}
+
     def clear_file_data(self, file_path: str):
         """
         Clear all data for a specific file (for reprocessing).
