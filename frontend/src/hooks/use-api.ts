@@ -75,7 +75,7 @@ export interface GraphData {
   stats: Record<string, number>
 }
 
-export function usePolling<T>(fetcher: () => Promise<T | null>, intervalMs: number) {
+export function usePolling<T>(fetcher: () => Promise<T | null>, intervalMs: number, deps: unknown[] = []) {
   const [data, setData] = useState<T | null>(null)
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
@@ -89,7 +89,8 @@ export function usePolling<T>(fetcher: () => Promise<T | null>, intervalMs: numb
     refresh()
     const id = setInterval(refresh, intervalMs)
     return () => clearInterval(id)
-  }, [refresh, intervalMs])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refresh, intervalMs, ...deps])
 
   return { data, refresh }
 }
@@ -108,7 +109,7 @@ export function useProgress() {
 
 export function useLogs(level?: string) {
   const params = level ? `?level=${level}` : ""
-  return usePolling<{ logs: LogEntry[] }>(() => apiFetch(`/logs${params}`), 3000)
+  return usePolling<{ logs: LogEntry[] }>(() => apiFetch(`/logs${params}`), 3000, [level])
 }
 
 export async function fetchFiles(status?: string, fileType?: string) {

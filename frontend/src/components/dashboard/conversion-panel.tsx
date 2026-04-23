@@ -27,6 +27,8 @@ export function ConversionPanel({ data, onRefresh }: { data: ProgressData | null
     }
   }
 
+  const computedPercent = data?.percent || (data && data.total > 0 ? Math.round((data.processed / data.total) * 1000) / 10 : 0)
+
   const eta = data?.eta_seconds
     ? `ETA: ${Math.floor(data.eta_seconds / 60)}m ${data.eta_seconds % 60}s`
     : ""
@@ -59,10 +61,10 @@ export function ConversionPanel({ data, onRefresh }: { data: ProgressData | null
               <span className="tabular-nums text-muted-foreground">
                 {data?.processed ?? 0} / {data?.total ?? 0} files
               </span>
-              <span className="tabular-nums font-medium">{data?.percent ?? 0}%</span>
+              <span className="tabular-nums font-medium">{computedPercent}%</span>
               {eta && <span className="text-xs text-muted-foreground">{eta}</span>}
             </div>
-            <Progress value={data?.percent ?? 0} />
+            <Progress value={computedPercent} />
             {running && data?.current_file && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
