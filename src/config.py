@@ -174,6 +174,7 @@ class Config(BaseModel):
         exts.update(self.supported_formats.video)
         exts.update(self.supported_formats.email)
         exts.update(self.supported_formats.latex)
+        exts.update(self.supported_formats.google_takeout)
         return exts
 
 

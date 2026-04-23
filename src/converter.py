@@ -629,6 +629,7 @@ class DocumentConverterPipeline:
 
     def _convert_video(self, file_path: str, output_path: str) -> bool:
         """Convert video file — extract audio and transcribe."""
+        tmp_audio = None
         try:
             import subprocess
             import tempfile
@@ -644,11 +645,8 @@ class DocumentConverterPipeline:
             )
 
             if result.returncode == 0 and os.path.exists(tmp_audio):
-                success = self._convert_audio(tmp_audio, output_path)
-                os.unlink(tmp_audio)
-                return success
+                return self._convert_audio(tmp_audio, output_path)
 
-            os.unlink(tmp_audio)
             logger.warning(f"ffmpeg audio extraction failed for {file_path}")
             return False
 
@@ -658,6 +656,9 @@ class DocumentConverterPipeline:
         except Exception as e:
             logger.error(f"Video conversion failed: {e}")
             return False
+        finally:
+            if tmp_audio and os.path.exists(tmp_audio):
+                os.unlink(tmp_audio)
 
     # ---- New format converters ----
 

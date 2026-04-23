@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 *.egg-info/
-dist/
 build/
 *.egg
 
@@ -33,6 +32,11 @@ failed_files.txt
 knowledge/backlinks/
 knowledge/timeline/timeline.json
 knowledge/graph.json
+
+# Frontend
+frontend/node_modules/
+frontend/.tsbuildinfo
+frontend/node_modules/.tmp/
 
 # Secrets / env
 .env
