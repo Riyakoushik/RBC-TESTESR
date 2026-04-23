@@ -3,14 +3,13 @@ RBC-TESTER Web Dashboard
 FastAPI application for monitoring and managing the document conversion pipeline.
 """
 
-import os
 import sys
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse
 
 # Ensure project root is on path
 project_root = Path(__file__).parent.parent
@@ -18,6 +17,9 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from web.api import router as api_router
+
+# Path to the React build output
+DIST_DIR = Path(__file__).parent / "static" / "dist"
 
 
 @asynccontextmanager
@@ -33,27 +35,37 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Mount static files
-static_dir = Path(__file__).parent / "static"
-static_dir.mkdir(exist_ok=True)
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-
-# Templates
-templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
-
-# Include API routes
+# Include API routes first (before catch-all static mount)
 app.include_router(api_router, prefix="/api")
-
-
-@app.get("/")
-async def dashboard(request: Request):
-    """Serve the main dashboard page."""
-    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+# Mount React build assets
+if DIST_DIR.exists():
+    assets_dir = DIST_DIR / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve the React SPA — all non-API routes return index.html."""
+        file_path = (DIST_DIR / full_path).resolve()
+        if full_path and file_path.is_relative_to(DIST_DIR.resolve()) and file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(DIST_DIR / "index.html"))
+else:
+    # Fallback: serve old static files if React build not present
+    static_dir = Path(__file__).parent / "static"
+    static_dir.mkdir(exist_ok=True)
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    @app.get("/")
+    async def fallback_root():
+        return {"error": "Frontend not built. Run 'npm run build' in frontend/ directory."}
 
 
 def main():

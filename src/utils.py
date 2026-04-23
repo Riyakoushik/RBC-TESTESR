@@ -36,6 +36,11 @@ def detect_file_type(file_path: str) -> str:
         return "email"
     if ext in config.supported_formats.latex:
         return "latex"
+    # Google Takeout detection: .json files inside a "Takeout" directory tree
+    if ext == ".json":
+        parts = Path(file_path).parts
+        if any(p.lower() == "takeout" for p in parts):
+            return "google_takeout"
     if ext in config.supported_formats.documents:
         return "document"
     if ext in config.supported_formats.images:
